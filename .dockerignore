@@ -1,41 +1,23 @@
-# Python
-__pycache__/
+__pycache__
 *.pyc
 *.pyo
 *.pyd
 .Python
-venv/
-.venv/
-env/
+env
+venv
+.venv
 .env
-
-# Node
-node_modules/
-.next/
-out/
-build/
-dist/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
-.gitignore
-
-# Model cache
-.huggingface/
-.cache/
-
-# Logs
 *.log
-
-# Local development
+*.mp4
+.tmp
 latest_video.mp4
+.git
+.gitignore
+README.md
+DEPLOY_HF.md
+Dockerfile
+Dockerfile.hf
+ai-dashboard
+industrial-dashboard
+product-dashboard
+product-ui
