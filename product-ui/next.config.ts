@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8001';
+    if (!backendUrl || !backendUrl.startsWith('http')) {
+      return [];
+    }
     return [
       {
         source: '/api/backend/:path*',
