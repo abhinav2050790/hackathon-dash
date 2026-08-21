@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-# Install Rust for packages that need compilation (tokenizers, pydantic-core, etc.)
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source "$HOME/.cargo/env"
+# Check if Rust/cargo already available
+if command -v cargo &> /dev/null; then
+    echo "Rust already installed: $(cargo --version)"
+else
+    echo "Installing Rust..."
+    # Install rustup to user-writable location
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+    source "$HOME/.cargo/env"
+fi
 
 # Upgrade pip and install
 pip install --upgrade pip setuptools wheel
