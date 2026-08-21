@@ -18,6 +18,5 @@ fi
 # Upgrade pip
 pip install --upgrade pip setuptools wheel
 
-# Install with binary preference - try binary first, fallback to source
-pip install --prefer-binary -r requirements.txt || \
+# Install with ONLY binary wheels - no compilation
 pip install --only-binary :all: -r requirements.txt
