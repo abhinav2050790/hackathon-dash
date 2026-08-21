@@ -5,14 +5,12 @@ import ast
 import traceback
 import time
 import pymupdf
-import torch
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
-from diffusers import TextToVideoSDPipeline
-from diffusers.utils import export_to_video
+
 
 # Configuration from environment variables
 BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
@@ -26,23 +24,11 @@ if GEMINI_API_KEY:
     except Exception as e:
         print(f"Failed to init Gemini client: {e}")
 
-# Lazy-load video pipeline (load on first request to avoid startup timeout)
+# Video generation disabled for Render free tier (512MB limit)
 pipe = None
 
 def get_pipeline():
-    global pipe
-    if pipe is None:
-        print("Loading ZeroScope model (576w - optimized for low memory)...")
-        pipe = TextToVideoSDPipeline.from_pretrained(
-            "cerspense/zeroscope_v2_576w",
-            torch_dtype=torch.float32,
-            low_cpu_mem_usage=True,
-            variant="fp32",
-        )
-        pipe.enable_model_cpu_offload()
-        pipe.enable_vae_slicing()
-        print("ZeroScope model loaded!")
-    return pipe
+    return None
 
 app = FastAPI(title="Industrial AI Backend")
 
@@ -211,45 +197,12 @@ async def chat_with_document(request: ChatRequest):
 
 @app.post("/generate-visual-prompt")
 async def generate_visual_prompt(request: VisualRequest):
-    try:
-        print("\n--- TRIGGERING LOCAL CAD VIDEO GENERATION ---")
-        prompt_content = f"3D CAD blueprint schematic of {request.product_name} ({request.dimensions}). Detailed orthographic projections, {request.material} housing, cyan vectors on blueprint grid, smooth engineering rotation loop."
-        
-        print(f"Generating video with prompt: {prompt_content}")
-        
-        # Generate video locally
-        pipeline = get_pipeline()
-        video_frames = pipeline(
-            prompt_content, 
-            num_inference_steps=15,  # Reduced from 25 for speed/memory
-            num_frames=16,           # Reduced from 24 for memory
-            height=256,              # Reduced from 320
-            width=448,               # Reduced from 576
-        ).frames[0]
-        
-        # Save video
-        video_path = "/tmp/latest_video.mp4"
-        export_to_video(video_frames, video_path, fps=8)
-        print("SUCCESS: Video generated locally! Serving to web app.")
-        
-        # Return video URL
-        video_url = f"{BASE_URL}/video?t={int(time.time())}"
-        
-        return {"prompt": prompt_content, "video": video_url}
-        
-    except Exception as e:
-        print("\n=== GENERATION CRASHED ===")
-        traceback.print_exc()
-        # Return a placeholder video URL instead of crashing
-        placeholder_url = "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"
-        return {"prompt": prompt_content, "video": placeholder_url, "note": "Using placeholder - generation failed: " + str(e)[:100]}
+    prompt_content = f"3D CAD blueprint schematic of {request.product_name} ({request.dimensions}). Detailed orthographic projections, {request.material} housing, cyan vectors on blueprint grid, smooth engineering rotation loop."
+    
+    placeholder_url = "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"
+    return {"prompt": prompt_content, "video": placeholder_url, "note": "Video generation disabled on free tier"}
 
-@app.get("/video")
-async def serve_video():
-    video_path = "/tmp/latest_video.mp4"
-    if os.path.exists(video_path):
-        return FileResponse(video_path, media_type="video/mp4")
-    raise HTTPException(status_code=404, detail="Video not found")
+
 
 if __name__ == "__main__":
     import uvicorn

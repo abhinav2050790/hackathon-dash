@@ -92,13 +92,6 @@ export default function NothingOSDashboard() {
   const [visualPrompt, setVisualPrompt] = useState("");
   const [visualVideo, setVisualVideo] = useState("");
   const [visualLoading, setVisualLoading] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (visualVideo && videoRef.current) {
-      videoRef.current.play().catch(() => {});
-    }
-  }, [visualVideo]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
@@ -147,40 +140,8 @@ export default function NothingOSDashboard() {
   };
 
  const handleGenerateVisual = async () => {
-    if (!result) return;
-    setVisualLoading(true);
-    setVisualVideo("");
-    setVisualPrompt("Synthesizing CAD video via Hugging Face API... (This takes 45-90 seconds)");
-    
-    try {
-      const response = await fetch("/api/backend/generate-visual-prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          product_name: result.product.product_name,
-          material: result.product.material,
-          dimensions: result.product.dimensions
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error("API generation failed.");
-      }
-      
-      const data = await response.json();
-      setVisualPrompt(data.prompt);
-      
-      // Inject the live generated Base64 video directly into the player
-      if (data.video) {
-        // Convert backend video URL to use proxy path
-        const videoUrl = data.video.replace("http://localhost:8001/video", "/api/backend/video");
-        setVisualVideo(videoUrl);
-      }
-    } catch (err) {
-      setVisualPrompt("Live generation failed. Check your Python terminal for Hugging Face API errors.");
-    } finally {
-      setVisualLoading(false);
-    }
+    setVisualPrompt("Video generation disabled on free tier (512MB limit). Deploy to HF Spaces for GPU.");
+    setVisualLoading(false);
   };
   
   return (
@@ -340,27 +301,10 @@ export default function NothingOSDashboard() {
 
                 {visualPrompt && (
                   <div className="bg-zinc-50 border-2 border-black p-4 rounded-2xl text-[11px] text-zinc-800 mb-4 leading-relaxed">
-                    <span className="text-[#ff1f3d] font-black block mb-1">// VIDEO_PROMPT:</span>
+                    <span className="text-[#ff1f3d] font-black block mb-1">// STATUS:</span>
                     {visualPrompt}
                   </div>
                 )}
-
-               {/* Video Player Render Block */}
-{visualVideo && (
-  <div className="border-2 border-black rounded-2xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-black mt-4">
-    <video 
-      ref={videoRef}
-      key={visualVideo} /* <-- THIS IS THE FIX */
-      controls 
-      autoPlay 
-      loop 
-      muted
-      playsInline
-      className="w-full h-auto max-h-72 object-cover"
-      src={visualVideo}
-    />
-  </div>
-)}
               </div>
 
               {/* Neural RAG Chat */}
