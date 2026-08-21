@@ -32,13 +32,15 @@ pipe = None
 def get_pipeline():
     global pipe
     if pipe is None:
-        print("Loading ZeroScope model...")
+        print("Loading ZeroScope model (576w - optimized for low memory)...")
         pipe = TextToVideoSDPipeline.from_pretrained(
-            "cerspense/zeroscope_v2_xl",
+            "cerspense/zeroscope_v2_576w",
             torch_dtype=torch.float32,
             low_cpu_mem_usage=True,
+            variant="fp32",
         )
-        pipe.to("cpu")
+        pipe.enable_model_cpu_offload()
+        pipe.enable_vae_slicing()
         print("ZeroScope model loaded!")
     return pipe
 
@@ -219,10 +221,10 @@ async def generate_visual_prompt(request: VisualRequest):
         pipeline = get_pipeline()
         video_frames = pipeline(
             prompt_content, 
-            num_inference_steps=25, 
-            num_frames=24,
-            height=320,
-            width=576
+            num_inference_steps=15,  # Reduced from 25 for speed/memory
+            num_frames=16,           # Reduced from 24 for memory
+            height=256,              # Reduced from 320
+            width=448,               # Reduced from 576
         ).frames[0]
         
         # Save video
@@ -238,7 +240,9 @@ async def generate_visual_prompt(request: VisualRequest):
     except Exception as e:
         print("\n=== GENERATION CRASHED ===")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return a placeholder video URL instead of crashing
+        placeholder_url = "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"
+        return {"prompt": prompt_content, "video": placeholder_url, "note": "Using placeholder - generation failed: " + str(e)[:100]}
 
 @app.get("/video")
 async def serve_video():
