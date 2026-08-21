@@ -89,6 +89,10 @@ def safe_extract_json(content) -> dict:
 async def health_check():
     return {"status": "ok", "service": "industrial-ai-backend"}
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "industrial-ai-backend", "endpoints": ["/health", "/process-document", "/chat", "/generate-visual-prompt"]}
+
 @app.post("/process-document")
 async def process_document(file: UploadFile = File(...)):
     try:
