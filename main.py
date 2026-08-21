@@ -16,7 +16,7 @@ from diffusers.utils import export_to_video
 
 # Configuration from environment variables
 BASE_URL = os.getenv("BASE_URL", "http://localhost:7860")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
 
 # Lazy-load Gemini client
 client = None
